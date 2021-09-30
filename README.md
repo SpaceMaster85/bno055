@@ -1,4 +1,12 @@
 # A BNO05 ROS2 Package 
+This is a fork of the original package!
+
+## Why a fork?
+When you use the original package with the robot_localization package and try to fuse the imu values, the values will be ignored.
+The original driver sets the covariance to -1 which means no vaild values. 
+I adjusted the covariance and added a timestamp to the message header. The raw imu values are no disabled.
+In the original config file a section for the calibration was given but not used. In this version these calibration values are taken and transfered at startup to the imu.
+
 
 ## Description
 A ROS2 driver for the sensor IMU Bosch BNO055.
