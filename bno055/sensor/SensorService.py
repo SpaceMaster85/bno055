@@ -54,11 +54,11 @@ class SensorService:
         QoSProf = QoSProfile(depth=10)
 
         # create topic publishers:
-        self.pub_imu_raw = node.create_publisher(Imu, prefix + 'imu_raw', QoSProf)
+        #self.pub_imu_raw = node.create_publisher(Imu, prefix + 'imu_raw', QoSProf)
         self.pub_imu = node.create_publisher(Imu, prefix + 'imu', QoSProf)
         self.pub_mag = node.create_publisher(MagneticField, prefix + 'mag', QoSProf)
         self.pub_temp = node.create_publisher(Temperature, prefix + 'temp', QoSProf)
-        self.pub_calib_status = node.create_publisher(String, prefix + 'calib_status', QoSProf)
+        #self.pub_calib_status = node.create_publisher(String, prefix + 'calib_status', QoSProf)
 
     def configure(self):
         """Configure the IMU sensor hardware."""
@@ -131,35 +131,58 @@ class SensorService:
         # read from sensor
         buf = self.con.receive(registers.ACCEL_DATA, 45)
         # Publish raw data
-        # TODO: convert rcl Clock time to ros time?
-        # imu_raw_msg.header.stamp = node.get_clock().now()
-        imu_raw_msg.header.frame_id = self.param.frame_id.value
-        # TODO: do headers need sequence counters now?
-        # imu_raw_msg.header.seq = seq
+        # # TODO: convert rcl Clock time to ros time?
+        # # imu_raw_msg.header.stamp = node.get_clock().now()
+        # imu_raw_msg.header.frame_id = self.param.frame_id.value
+        # # TODO: do headers need sequence counters now?
+        # # imu_raw_msg.header.seq = seq
 
-        # TODO: make this an option to publish?
-        imu_raw_msg.orientation_covariance[0] = -1
-        imu_raw_msg.linear_acceleration.x = float(
-            struct.unpack('h', struct.pack('BB', buf[0], buf[1]))[0]) / acc_fact
-        imu_raw_msg.linear_acceleration.y = float(
-            struct.unpack('h', struct.pack('BB', buf[2], buf[3]))[0]) / acc_fact
-        imu_raw_msg.linear_acceleration.z = float(
-            struct.unpack('h', struct.pack('BB', buf[4], buf[5]))[0]) / acc_fact
-        imu_raw_msg.linear_acceleration_covariance[0] = -1
-        imu_raw_msg.angular_velocity.x = float(
-            struct.unpack('h', struct.pack('BB', buf[12], buf[13]))[0]) / gyr_fact
-        imu_raw_msg.angular_velocity.y = float(
-            struct.unpack('h', struct.pack('BB', buf[14], buf[15]))[0]) / gyr_fact
-        imu_raw_msg.angular_velocity.z = float(
-            struct.unpack('h', struct.pack('BB', buf[16], buf[17]))[0]) / gyr_fact
-        imu_raw_msg.angular_velocity_covariance[0] = -1
+        # # TODO: make this an option to publish?
+        # imu_raw_msg.orientation_covariance[0] = 0.002
+        # imu_raw_msg.orientation_covariance[4] = 0.002
+        # imu_raw_msg.orientation_covariance[8] = 0.002
+
+
+
+
+
+        # imu_raw_msg.linear_acceleration.x = float(
+        #     struct.unpack('h', struct.pack('BB', buf[0], buf[1]))[0]) / acc_fact
+        # imu_raw_msg.linear_acceleration.y = float(
+        #     struct.unpack('h', struct.pack('BB', buf[2], buf[3]))[0]) / acc_fact
+        # imu_raw_msg.linear_acceleration.z = float(
+        #     struct.unpack('h', struct.pack('BB', buf[4], buf[5]))[0]) / acc_fact
+
+        # imu_raw_msg.linear_acceleration_covariance[0] = 0.60
+        # imu_raw_msg.linear_acceleration_covariance[4] = 0.60
+        # imu_raw_msg.linear_acceleration_covariance[8] = 0.60
+
+
+        # imu_raw_msg.angular_velocity.x = float(
+        #     struct.unpack('h', struct.pack('BB', buf[12], buf[13]))[0]) / gyr_fact
+        # imu_raw_msg.angular_velocity.y = float(
+        #     struct.unpack('h', struct.pack('BB', buf[14], buf[15]))[0]) / gyr_fact
+        # imu_raw_msg.angular_velocity.z = float(
+        #     struct.unpack('h', struct.pack('BB', buf[16], buf[17]))[0]) / gyr_fact
+
+        # imu_raw_msg.angular_velocity_covariance[0] = 0.003
+        # imu_raw_msg.angular_velocity_covariance[4] = 0.003
+        # imu_raw_msg.angular_velocity_covariance[8] = 0.003
+
+
+
         # node.get_logger().info('Publishing imu message')
-        self.pub_imu_raw.publish(imu_raw_msg)
+        # self.pub_imu_raw.publish(imu_raw_msg)
 
         # TODO: make this an option to publish?
         # Publish filtered data
         # imu_msg.header.stamp = node.get_clock().now()
         imu_msg.header.frame_id = self.param.frame_id.value
+
+        imu_msg.orientation_covariance[0] = 0.002    #0.002
+        imu_msg.orientation_covariance[4] = 0.002 
+        imu_msg.orientation_covariance[8] = 0.002 
+
 
         q = Quaternion()
         # imu_msg.header.seq = seq
@@ -170,26 +193,39 @@ class SensorService:
         # TODO(flynneva): replace with standard normalize() function
         # normalize
         norm = sqrt(q.x*q.x + q.y*q.y + q.z*q.z + q.w*q.w)
-        imu_msg.orientation.x = q.x / norm
-        imu_msg.orientation.y = q.y / norm
-        imu_msg.orientation.z = q.z / norm
-        imu_msg.orientation.w = q.w / norm
 
-        imu_msg.linear_acceleration.x = float(
+        if (norm != 0.0):
+
+            imu_msg.orientation.x = q.x / norm
+            imu_msg.orientation.y = q.y / norm
+            imu_msg.orientation.z = q.z / norm
+            imu_msg.orientation.w = q.w / norm
+
+            imu_msg.linear_acceleration.x = float(
             struct.unpack('h', struct.pack('BB', buf[32], buf[33]))[0]) / acc_fact
-        imu_msg.linear_acceleration.y = float(
+            imu_msg.linear_acceleration.y = float(
             struct.unpack('h', struct.pack('BB', buf[34], buf[35]))[0]) / acc_fact
-        imu_msg.linear_acceleration.z = float(
+            imu_msg.linear_acceleration.z = float(
             struct.unpack('h', struct.pack('BB', buf[36], buf[37]))[0]) / acc_fact
-        imu_msg.linear_acceleration_covariance[0] = -1
-        imu_msg.angular_velocity.x = float(
+
+            imu_msg.linear_acceleration_covariance[0] = 0.60 #0.60
+            imu_msg.linear_acceleration_covariance[4] = 0.60
+            imu_msg.linear_acceleration_covariance[8] = 0.60
+
+
+            imu_msg.angular_velocity.x = float(
             struct.unpack('h', struct.pack('BB', buf[12], buf[13]))[0]) / gyr_fact
-        imu_msg.angular_velocity.y = float(
+            imu_msg.angular_velocity.y = float(
             struct.unpack('h', struct.pack('BB', buf[14], buf[15]))[0]) / gyr_fact
-        imu_msg.angular_velocity.z = float(
+            imu_msg.angular_velocity.z = float(
             struct.unpack('h', struct.pack('BB', buf[16], buf[17]))[0]) / gyr_fact
-        imu_msg.angular_velocity_covariance[0] = -1
-        self.pub_imu.publish(imu_msg)
+
+            imu_msg.angular_velocity_covariance[0] = 0.003  #0.003
+            imu_msg.angular_velocity_covariance[4] = 0.003
+            imu_msg.angular_velocity_covariance[8] = 0.003
+
+            imu_msg.header.stamp = self.node.get_clock().now().to_msg()
+            self.pub_imu.publish(imu_msg)
 
         # Publish magnetometer data
         # mag_msg.header.stamp = node.get_clock().now()
@@ -201,13 +237,15 @@ class SensorService:
             float(struct.unpack('h', struct.pack('BB', buf[8], buf[9]))[0]) / mag_fact
         mag_msg.magnetic_field.z = \
             float(struct.unpack('h', struct.pack('BB', buf[10], buf[11]))[0]) / mag_fact
+        mag_msg.header.stamp = self.node.get_clock().now().to_msg()
         self.pub_mag.publish(mag_msg)
 
-        # Publish temperature
+        # Publish temperatureS
         # temp_msg.header.stamp = node.get_clock().now()
         temp_msg.header.frame_id = self.param.frame_id.value
         # temp_msg.header.seq = seq
         temp_msg.temperature = float(buf[44])
+        temp_msg.header.stamp = self.node.get_clock().now().to_msg()
         self.pub_temp.publish(temp_msg)
 
     def get_calib_status(self):
@@ -285,7 +323,7 @@ class SensorService:
         # Must switch to config mode to write out
         if not (self.con.transmit(registers.OPER_MODE, 1, bytes([registers.OPER_MODE_CONFIG]))):
             self.node.get_logger().error('Unable to set IMU into config mode')
-        time.sleep(0.025)
+        #time.sleep(0.025)
 
         # Seems to only work when writing 1 register at a time
         try:

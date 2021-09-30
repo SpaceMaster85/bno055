@@ -73,6 +73,10 @@ class Bno055Node(Node):
         self.sensor = SensorService(self, connector, self.param)
 
         # configure imu
+        self.sensor.set_calib_offsets(self.param.acc_offset.value,self.param.mag_offset.value,self.param.gyr_offset.value)
+        
+        self.sensor.get_calib_offsets()        
+        
         self.sensor.configure()
 
 
@@ -139,8 +143,8 @@ def main(args=None):
         data_query_timer = node.create_timer(f, read_data)
 
         # start regular calibration status logging
-        f = 1.0 / float(node.param.calib_status_frequency.value)
-        status_timer = node.create_timer(f, log_calibration_status)
+        # f = 1.0 / float(node.param.calib_status_frequency.value)
+        # status_timer = node.create_timer(f, log_calibration_status)
 
         rclpy.spin(node)
 
